@@ -1,0 +1,597 @@
+% !TEX root = hazelnut-dynamics.tex
+
+\clearpage
+\newcommand{\calculusSec}{Hazelnut Live, Formally}
+\section{\protect\calculusSec}
+\label{sec:calculus}
+\todo{exposition}
+
+\begin{figure}[h]
+$\arraycolsep=4pt\begin{array}{rllllll}
+\mathsf{HTyp} & \htau & ::= &
+  b ~\vert~
+  \tarr{\htau}{\htau} ~\vert~
+  % \tprod{\htau}{\htau} ~\vert~
+  % \tsum{\htau}{\htau} ~\vert~
+  \tehole\\
+\mathsf{HExp} & \hexp & ::= &
+  c ~\vert~
+  x ~\vert~
+  \halam{x}{\htau}{\hexp} ~\vert~
+  \hap{\hexp}{\hexp} ~\vert~
+  % \hpair{\hexp}{\hexp} ~\vert~
+  % \hprj{i}{\hexp} ~\vert~
+  % \hinj{i}{\hexp} ~\vert~
+  % \hcase{\hexp}{x}{\hexp}{x}{\hexp} ~\vert~
+  % \hadd{\hexp}{\hexp} ~\vert~
+  \hehole{u} ~\vert~
+  \hhole{\hexp}{u} ~\vert~
+  {\hlam{x}{\hexp}} ~\vert~
+  \hexp : \htau\\
+ \mathsf{DHExp} & \dexp  & ::= &
+  c ~\vert~
+  x ~\vert~
+  {\halam{x}{\htau}{\dexp}} ~\vert~
+  \hap{\dexp}{\dexp} ~\vert~
+  % \hpair{\dexp}{\dexp} ~\vert~
+  % \hprj{i}{\dexp} ~\vert~
+  % \hinj{i}{\dexp} ~\vert~
+  % \hcase{\dexp}{x}{\dexp}{x}{\dexp} ~\vert~
+  % \hadd{\dexp}{\dexp} ~\vert~
+  \dehole{\mvar}{\subst} ~\vert~
+  \dhole{\dexp}{\mvar}{\subst} ~\vert~
+  \dcast{\htau}{\dexp}\\
+\end{array}$
+\caption{Syntax of H-types, H-expressions and dynamic H-expressions. We write $x$ to range over variables, $u$ over hole names and $\sigma$ over finite substitutions.}
+\label{fig:HTyp}
+\label{fig:HExp}
+\end{figure}
+
+\begin{figure}[h]
+\judgbox{\tconsistent{\htau_1}{\htau_2}}{$\htau_1$ is consistent with $\htau_2$}
+\begin{mathpar}
+\inferrule[TCHole1]{ }{
+  \tconsistent{\tehole}{\htau}
+}
+
+\inferrule[TCHole2]{ }{
+  \tconsistent{\htau}{\tehole}
+}
+
+\inferrule[TCRefl]{ }{
+  \tconsistent{\htau}{\htau}
+}
+
+\inferrule[TCArr]{
+  \tconsistent{\htau_1}{\htau_1'}\\
+  \tconsistent{\htau_2}{\htau_2'}
+}{
+  \tconsistent{\tarr{\htau_1}{\htau_2}}{\tarr{\htau_1'}{\htau_2'}}
+}
+%
+% \inferrule{
+%   \tconsistent{\htau_1}{\htau_1'}\\
+%   \tconsistent{\htau_2}{\htau_2'}
+% }{
+%   \tconsistent{\tprod{\htau_1}{\htau_2}}{\tprod{\htau_1'}{\htau_2'}}
+% }
+%
+% \inferrule{
+%   \tconsistent{\htau_1}{\htau_1'}\\
+%   \tconsistent{\htau_2}{\htau_2'}
+% }{
+%   \tconsistent{\tsum{\htau_1}{\htau_2}}{\tsum{\htau_1'}{\htau_2'}}
+% }
+\end{mathpar}
+
+
+\judgbox{\tinconsistent{\htau}{\htau'}}{$\htau$ is inconsistent with $\htau'$}
+\begin{mathpar}
+    \inferrule[ICBaseArr1]{ }{
+      \tinconsistent{\tb}{\tarr{\htau_1}{\htau_2}}
+    }
+
+    \inferrule[ICBaseArr2]{ }{
+      \tinconsistent{\tarr{\htau_1}{\htau_2}}{\tb}
+    }
+
+    \inferrule[ICArr1]{
+      \tinconsistent{\htau_1}{\htau_3}
+    }{
+      \tinconsistent{\tarr{\htau_1}{\htau_2}}{\tarr{\htau_3}{\htau_4}}
+    }
+
+    \inferrule[ICArr2]{
+      \tinconsistent{\htau_2}{\htau_4}
+    }{
+      \tinconsistent{\tarr{\htau_1}{\htau_2}}{\tarr{\htau_3}{\htau_4}}
+    }
+\end{mathpar}
+
+\judgbox{\arrmatch{\htau}{\tarr{\htau_1}{\htau_2}}}{$\htau$ has matched arrow type $\tarr{\htau_1}{\htau_2}$}
+\begin{mathpar}
+\inferrule[MAHole]{ }{
+  \arrmatch{\tehole}{\tarr{\tehole}{\tehole}}
+}
+
+\inferrule[MAArr]{ }{
+  \arrmatch{\tarr{\htau_1}{\htau_2}}{\tarr{\htau_1}{\htau_2}}
+}
+\end{mathpar}
+
+% \judgbox{\prodmatch{\htau}{\tprod{\htau_1}{\htau_2}}}{$\htau$ has matched product type $\tprod{\htau_1}{\htau_2}$}
+% \begin{mathpar}
+% \inferrule{ }{
+%   \prodmatch{\tehole}{\tprod{\tehole}{\tehole}}
+% }
+
+% \inferrule{ }{
+%   \prodmatch{\tprod{\htau_1}{\htau_2}}{\tprod{\htau_1}{\htau_2}}
+% }
+% \end{mathpar}
+
+% \judgbox{\summatch{\htau}{\tsum{\htau_1}{\htau_2}}}{$\htau$ has matched sum type $\tsum{\htau_1}{\htau_2}$}
+% \begin{mathpar}
+% \inferrule{ }{
+%   \summatch{\tehole}{\tsum{\tehole}{\tehole}}
+% }
+
+% \inferrule{ }{
+%   \summatch{\tsum{\htau_1}{\htau_2}}{\tsum{\htau_1}{\htau_2}}
+% }
+% \end{mathpar}
+\caption{Type Consistency, Inconsistency, and Matching}
+\label{fig:tconsistent}
+\label{fig:arrmatch}
+\end{figure}
+
+\begin{figure}[h]
+\judgbox{\hsyn{\hGamma}{\hexp}{\htau}}{$\htau$ synthesizes type $\htau$}
+\begin{mathpar}
+\inferrule[SConst]{ }{
+  \hsyn{\hGamma}{c}{b}
+}
+
+\inferrule[SVar]{ }{
+  \hsyn{\hGamma, x : \htau}{x}{\htau}
+}
+
+\inferrule[SLam]{
+  \hsyn{\hGamma, x : \htau_1}{\hexp}{\htau_2}
+}{
+  \hsyn{\hGamma}{\halam{x}{\htau_1}{\hexp}}{\tarr{\htau_1}{\htau_2}}
+}
+
+\inferrule[SAp]{
+  \hsyn{\hGamma}{\hexp_1}{\htau_1}\\
+  \arrmatch{\htau_1}{\tarr{\htau_2}{\htau}}\\\\
+  \hana{\hGamma}{\hexp_2}{\htau_2}
+}{
+  \hsyn{\hGamma}{\hap{\hexp_1}{\hexp_2}}{\htau}
+}
+
+\inferrule[SEHole]{ }{
+  \hsyn{\hGamma}{\hehole{u}}{\tehole}
+}
+
+\inferrule[SNEHole]{
+  \hsyn{\hGamma}{\hexp}{\htau}
+}{
+  \hsyn{\hGamma}{\hhole{\hexp}{u}}{\tehole}
+}
+
+\inferrule[SAsc]{
+  \hana{\hGamma}{\hexp}{\htau}
+}{
+  \hsyn{\hGamma}{\hexp : \htau}{\htau}
+}
+\end{mathpar}
+
+\judgbox{\hana{\hGamma}{\hexp}{\htau}}{$\htau$ analyzes against type $\htau$}
+\begin{mathpar}
+\inferrule[ALam]{
+  \arrmatch{\htau}{\tarr{\htau_1}{\htau_2}}\\
+  \hana{\hGamma, x : \htau_1}{\hexp}{\htau_2}
+}{
+  \hana{\hGamma}{\hlam{x}{\hexp}}{\htau}
+}
+
+\inferrule[ASubsume]{
+  \hsyn{\hGamma}{\hexp}{\htau}\\
+  \tconsistent{\htau}{\htau'}
+}{
+  \hana{\hGamma}{\hexp}{\htau'}
+}
+\end{mathpar}
+\caption{Bidirectional Typing of H-Expressions}
+\label{fig:tconsistent}
+\label{fig:arrmatch}
+\end{figure}
+
+\todo{definition of complete types and terms? do we care about completeness
+  of $\hexp$s or $\dexp$s?}
+
+\begin{figure}[h]
+\judgbox{\expandSyn{\hGamma}{\hexp}{\htau}{\dexp}{\Delta}}{ }
+\begin{mathpar}
+\inferrule[ESConst]{ }{
+  \expandSyn{\hGamma}{c}{b}{c}{\emptyset}
+}
+
+\inferrule[ESVar]{ }{
+  \expandSyn{\hGamma, x : \htau}{x}{\htau}{x}{\emptyset}
+}
+
+\inferrule[ESLam]{
+  \expandSyn{\hGamma, x : \htau_1}{\hexp}{\htau_2}{\dexp}{\Delta}
+}{
+  \expandSyn{\hGamma}{\halam{x}{\htau_1}{\hexp}}{\tarr{\htau_1}{\htau_2}}{\halam{x}{\htau_1}{\dexp}}{\Delta}
+}
+
+\inferrule[ESAp1]{
+  \hsyn{\hGamma}{\hexp_1}{\tehole}\\
+  \expandAna{\hGamma}{\hexp_2}{\tehole}{\dexp_2}{\htau_2}{\Delta_2}\\
+  \expandAna{\hGamma}{\hexp_1}{\tarr{\htau_2}{\tehole}}{\dexp_1}{\htau_1}{\Delta_1}
+}{
+  \expandSyn{\hGamma}{\hap{\hexp_1}{\hexp_2}}{\tehole}{\hap{(\dcast{\tarr{\htau_2}{\tehole}}{\dexp_1})}{\dexp_2}}{\Dunion{\Delta_1}{\Delta_2}}
+}
+
+\inferrule[ESAp2]{
+  \expandSyn{\hGamma}{\hexp_1}{\tarr{\htau_2}{\htau}}{\dexp_1}{\Delta_1}\\
+  \expandAna{\hGamma}{\hexp_2}{\htau_2}{\dexp_2}{\htau'_2}{\Delta_2}\\
+  \htau_2 \neq \htau'_2
+}{
+  \expandSyn{\hGamma}{\hap{\hexp_1}{\hexp_2}}{\htau}{\hap{\dexp_1}{\dcast{\htau_2}{\dexp_2}}}{\Dunion{\Delta_1}{\Delta_2}}
+}
+
+\inferrule[ESAp3]{
+  \expandSyn{\hGamma}{\hexp_1}{\tarr{\htau_2}{\htau}}{\dexp_1}{\Delta_1}\\
+  \expandAna{\hGamma}{\hexp_2}{\htau_2}{\dexp_2}{\htau_2}{\Delta_2}
+}{
+  \expandSyn{\hGamma}{\hap{\hexp_1}{\hexp_2}}{\htau}{\hap{\dexp_1}{\dexp_2}}{\Dunion{\Delta_1}{\Delta_2}}
+}\\
+%
+% \inferrule[expand-pair]{
+%   \expandSyn{\hGamma}{\hexp_1}{\htau_1}{\dexp_1}{\Delta_1}\\
+%   \expandSyn{\hGamma}{\hexp_2}{\htau_2}{\dexp_2}{\Delta_2}
+% }{
+%   \expandSyn{\hGamma}{\hpair{\hexp_1}{\hexp_2}}{\tprod{\htau_1}{\htau_2}}{\hpair{\dexp_1}{\dexp_2}}{\Dunion{\Delta_1}{\Delta_2}}
+% }
+%
+% \inferrule[expand-prj]{
+%   a
+% }{
+%   b
+% }
+%
+% (inj)
+
+%
+% \inferrule[expand-plus]{ }{
+%   \expandSyn{\hGamma}{\hadd{\hexp_1}{\hexp_2}}{\tnum}{\hadd{\dexp_1}{\dexp_2}}{\Dunion{\Delta_1}{\Delta_2}}
+% }
+%
+\inferrule[ESEHole]{ }{
+  \expandSyn{\hGamma}{\hehole{u}}{\tehole}{\dehole{u}{\idof{\hGamma}}}{\Dbinding{u}{\hGamma}{\tehole}}
+}
+
+\inferrule[ESNEHole]{
+  \expandSyn{\hGamma}{\hexp}{\htau}{\dexp}{\Delta}
+}{
+  \expandSyn{\hGamma}{\hhole{\hexp}{u}}{\tehole}{\dhole{\dexp}{u}{\idof{\hGamma}}}{\Delta, \Dbinding{u}{\hGamma}{\tehole}}
+}\\
+%
+\inferrule[ESAsc1]{
+  \expandAna{\hGamma}{\hexp}{\htau}{\dexp}{\htau'}{\Delta}\\
+  \htau \neq \htau'
+}{
+  \expandSyn{\hGamma}{\hexp : \htau}{\htau}{\dcast{\htau}{\dexp}}{\Delta}
+}
+
+\inferrule[ESAsc2]{
+  \expandAna{\hGamma}{\hexp}{\htau}{\dexp}{\htau}{\Delta}
+}{
+  \expandSyn{\hGamma}{\hexp : \htau}{\htau}{\dexp}{\Delta}
+}
+\end{mathpar}
+
+\judgbox{\expandAna{\hGamma}{\hexp}{\htau}{\dexp}{\htau}{\Delta}}{ }
+\begin{mathpar}
+\inferrule[EALam]{
+  \expandAna{\hGamma, x : \htau_1}{\hexp}{\htau_2}{\dexp}{\htau'_2}{\Delta}
+}{
+  \expandAna{\hGamma}{\hlam{x}{\hexp}}{\tarr{\htau_1}{\htau_2}}{\halam{x}{\htau_1}{\dexp}}{\tarr{\htau_1}{\htau_2'}}{\Delta}
+}
+
+\inferrule[EASubsume]{
+  \hexp \neq \hehole{u}\\
+  \hexp \neq \hhole{\hexp'}{u}\\\\
+  \expandSyn{\hGamma}{\hexp}{\htau'}{\dexp}{\Delta}\\
+  \tconsistent{\htau}{\htau'}
+}{
+  \expandAna{\hGamma}{\hexp}{\htau}{\dexp}{\htau'}{\Delta}
+}
+
+\inferrule[EAEHole]{ }{
+  \expandAna{\hGamma}{\hehole{u}}{\htau}{\dehole{u}{\idof{\hGamma}}}{\htau}{\Dbinding{u}{\hGamma}{\htau}}
+}
+
+\inferrule[EANEHole]{
+  \expandSyn{\hGamma}{\hexp}{\htau'}{\dexp}{\Delta}\\
+  \tconsistent{\htau}{\htau'}
+}{
+  \expandAna{\hGamma}{\hhole{\hexp}{u}}{\htau}{\dhole{\dexp}{u}{\idof{\hGamma}}}{\htau}{\Delta, \Dbinding{u}{\hGamma}{\htau}}
+}
+\end{mathpar}
+\caption{Algorithmic Expansion}
+\label{fig:expandSyn}
+\label{fig:expandAna}
+\end{figure}
+
+\begin{figure}[!ht]
+\judgbox{\hasType{\Delta}{\hGamma}{\dexp}{\htau}}{$\dexp$ is assigned type $\htau$}
+\begin{mathpar}
+\inferrule[TAConst]{ }{
+  \hasType{\Delta}{\hGamma}{c}{b}
+}
+
+\inferrule[TAVar]{ }{
+	\hasType{\Delta}{\hGamma, x : \htau}{x}{\htau}
+}
+
+\inferrule[TALam]{
+  \hasType{\Delta}{\hGamma, x : \htau_1}{\dexp}{\htau_2}
+}{
+  \hasType{\Delta}{\hGamma}{\halam{x}{\htau_1}{\dexp}}{\tarr{\htau_1}{\htau_2}}
+}
+
+\inferrule[TAAp]{
+  \hasType{\Delta}{\hGamma}{\dexp_1}{\htau_1}\\
+  \arrmatch{\htau_1}{\tarr{\htau_2}{\htau}}\\\\
+  \hasType{\Delta}{\hGamma}{\dexp_2}{\htau_2}
+}{
+  \hasType{\Delta}{\hGamma}{\hap{\dexp_1}{\dexp_2}}{\htau}
+}
+
+\inferrule[TAEHole]{
+  \hasType{\Delta}{\hGamma}{\sigma}{\hGamma'}
+}{
+  \hasType{\Delta, \Dbinding{u}{\hGamma'}{\htau}}{\hGamma}{\dehole{u}{\sigma}}{\htau}
+}
+
+\inferrule[TANEHole]{
+  \hasType{\Delta}{\hGamma}{\dexp}{\htau'}\\
+  \hasType{\Delta}{\hGamma}{\sigma}{\hGamma'}
+}{
+  \hasType{\Delta, \Dbinding{u}{\hGamma'}{\htau}}{\hGamma}{\dhole{\dexp}{u}{\sigma}}{\htau}
+}
+
+\inferrule[TACast]{
+  \hasType{\Delta}{\Gamma}{\dexp}{\htau'}\\
+  \tconsistent{\htau}{\htau'}
+}{
+  \hasType{\Delta}{\hGamma}{\dcast{\htau}{\dexp}}{\htau}
+}
+\end{mathpar}
+\caption{Type Assignment for Dynamic H-Expressions}
+\label{fig:hasType}
+\end{figure}
+
+\begin{figure}[!ht]
+  \begin{definition}
+    $\hasType{\Delta}{\hGamma}{\sigma}{\hGamma'}$ iff $\domof{\sigma} = \domof{\Gamma'}$ and for each $\dexp/x \in \sigma$, we have $x : \htau \in \hGamma'$ and $\hasType{\Delta}{\hGamma}{\dexp}{\htau}$.
+  \end{definition}
+  \caption{substitution type assignment}
+\end{figure}
+
+\begin{figure}[!ht]
+\judgbox{[\dexp_1 / x] \dexp_2 = \dexp_3}{Substitution}
+\[
+\begin{array}{lcl}
+[\dexp_1 / x] c
+&=&
+c\\
+{[\dexp_1 / x] x}
+&=&
+\dexp_1\\
+{[\dexp_1 / x] y}
+&=&
+y\\
+{[\dexp_1 / x] \dlam{y}{\htau}{\dexp_2}}
+&=&
+{\dlam{y}{\htau}{[\dexp_1 / x] \dexp_2}}
+\\
+{[\dexp_1 / x] \dap{e_2}{e_3}}
+&=&
+{\dapP{[\dexp_1 / x] e_2}{[\dexp_1 / x] e_3}}
+\\
+% {[\dexp_1 / x] \dinj{i}{e_2}}
+% &=&
+% {\dinj{i}{[\dexp_1 / x] e_2}}
+% \\
+% {[\dexp_1 / x] \dcase{e}{x}{e_x}{y}{e_y}}
+% &=&
+% {\dcase{[\dexp_1 / x]e}{x}{[\dexp_1 / x]e_x}{y}{[\dexp_1 / x]e_y}}
+% \\
+{[\dexp_1 / x]} \dehole{\mvar}{\subst}
+&=&
+\dehole{\mvar}{[\dexp_1 / x] \subst}
+\\
+{[\dexp_1 / x] \dhole{\dexp_2}{\mvar}{\subst}}
+&=&
+\dhole{ [ \dexp_1 / x ] \dexp_2 }{\mvar}{[\dexp_1 / x] \subst}
+\end{array}
+\]
+\end{figure}
+
+\begin{figure}[!ht]
+\judgbox{\isValue{\dexp}}{$\dexp$ is a value}
+\begin{mathpar}
+\inferrule[VConst]{ }{
+  \isValue{c}
+}
+
+\inferrule[VLam]{ }{
+  \isValue{\halam{x}{\htau}{\dexp}}
+}
+\end{mathpar}
+
+\judgbox{\isIndet{\dexp}}{$\dexp$ is indeterminate}
+\begin{mathpar}
+\inferrule[IEHole]
+{ }
+{\isIndet{\dehole{\mvar}{\subst}}}
+
+\inferrule[INEHole]
+{\isFinal{\dexp}}
+{\isIndet{\dhole{\dexp}{\mvar}{\subst}}}
+
+\inferrule[IAp]
+{\isIndet{\dexp_1}\\
+% \isFinal{\dexp_2}~\text{\todo{??}}}
+ \isFinal{\dexp_2}}
+{\isIndet{\dap{\dexp_1}{\dexp_2}}}
+
+\inferrule[ICast]
+{\isIndet{\dexp}}
+{\isIndet{\dcast{\htau}{\dexp}}}
+
+\end{mathpar}
+
+\judgbox{\isFinal{\dexp}}{$\dexp$ is final (it cannot be stepped)}
+\begin{mathpar}
+\Infer{FVal}
+{\isValue{\dexp}}{\isFinal{\dexp}}
+\and
+\Infer{FIndet}
+{\isIndet{\dexp}}{\isFinal{\dexp}}
+%% No longer a rule: Errors are not indet anymore:
+%% \and
+%% \Infer{f-err}
+%% {\isErr{\dexp}}{\isFinal{\dexp}}
+\end{mathpar}
+
+\judgbox{\isErr{\Delta}{\dexp}}{Under $\Delta$, $\dexp$ contains a cast error}
+\begin{mathpar}
+\inferrule[ERNEHole~\todo{??}]
+{\subst \sim_? \Gamma_2
+\\
+\isErr{\Delta; \Gamma_1, \Gamma_2}{\dexp}}
+{\isErr{\Delta; \Gamma_1}{\dhole{\dexp}{\mvar}{\subst}}}
+
+\inferrule[ERCastError~\todo{??}]
+% XXX use macro type assignment judgement here
+{\hasType{\Delta}{\todo{\emptyset}}{e}{\htau_2}\\
+ \tinconsistent{\htau_1}{\htau_2}}
+{\isErr{\Delta}{\dcast{\htau_1}{\dexp}}}
+
+\inferrule[ERLam~\todo{??}]
+% XXX use macro type assignment judgement here
+{\isErr{\Delta; \Gamma, x:\htau_1}{\dexp}}
+{\isErr{\Delta; \Gamma}{\halam{x}{\htau}{\dexp}}}
+
+\\
+
+\inferrule[ERAp1]
+{
+ \isErr{\Delta}{\dexp_1}
+ %\\\
+ %isFinal{\dexp_2}~\text{\todo{??}}
+}
+{\isErr{\Delta}{\dap{\dexp_1}{\dexp_2}}}
+
+\inferrule[ERAp2]
+{
+ %\isIndet{\dexp_1}
+ %\\
+ \isErr{\Delta}{\dexp_2}
+}
+{\isErr{\Delta}{\dap{\dexp_1}{\dexp_2}}}
+
+\inferrule[ERCast]
+% XXX use macro type assignment judgement here
+{\isErr{\Delta}{\dexp}}
+{\isErr{\Delta}{\dcast{\htau_1}{\dexp}}}
+
+\end{mathpar}
+
+\judgbox{\stepsTo{\dexp_1}{\dexp_2}}{$\dexp_1$ steps to $\dexp_2$}
+\begin{mathpar}
+\Infer{STHole}
+{\stepsTo{\dexp_1}{\dexp_2} }
+{\stepsTo{\dhole{\dexp_1}{\mvar}{\subst}}{\dhole{\dexp_2}{\mvar}{\subst}}}
+\and
+\Infer{STCast}
+{\hasType{\Delta}{\emptyset}{\dexp}{\htau_2} \\
+ \tconsistent{\tau_1}{\tau_2}}
+{\stepsTo{\dcast{\htau_1}{\dexp}}{\dexp}}
+\\
+\Infer{STAp1}
+{\stepsTo{\dexp_1}{\dexp_1'}}
+{\stepsTo{\dap{\dexp_1}{\dexp_2}}{\dap{\dexp_1'}{\dexp_2}}}
+\and
+\Infer{STAp2}
+{ \isFinal{\dexp_1} \\ \stepsTo{\dexp_2}{\dexp_2'}}
+{\stepsTo{\dap{\dexp_1}{\dexp_2}}{\dap{\dexp_1}{\dexp_2'}}}
+\and
+\Infer{STAp$\beta$}
+{ \isFinal{\dexp_2} }
+{\stepsTo{\dapP{\dlam{x}{\htau}{\dexp_1}}{\dexp_2}}{ [\dexp_2/x]\dexp_1 }}
+\end{mathpar}
+\caption{Structural Dynamics}
+\label{fig:isValue}
+\label{fig:isIndet}
+\label{fig:stepsTo}
+\end{figure}
+
+
+\clearpage
+\subsection{Metatheory}
+
+(these theorems should be taken as fairly provisional)
+
+\begin{theorem}[Expandability \todo{??}] ~
+  \begin{enumerate}
+    \item If $\hsyn{\hGamma}{\hexp}{\htau}$ then $\expandSyn{\hGamma}{\hexp}{\htau}{\dexp}{\Delta}$ for some $\dexp$ and $\Delta$.
+    \item If $\hana{\hGamma}{\hexp}{\htau}$ then $\expandAna{\hGamma}{\hexp}{\htau}{\dexp}{\htau'}{\Delta}$ for some $\dexp$ and $\htau'$ and $\Delta$.
+  \end{enumerate}
+\end{theorem}
+
+\begin{theorem}[Correspondence \todo{??}] ~
+  \begin{enumerate}
+    \item If $\expandSyn{\hGamma}{\hexp}{\htau}{\dexp}{\Delta}$ then $\hsyn{\hGamma}{\hexp}{\htau}$.
+    \item If $\expandAna{\hGamma}{\hexp}{\htau}{\dexp}{\htau'}{\Delta}$ then $\hana{\hGamma}{\hexp}{\htau}$.
+  \end{enumerate}
+\end{theorem}
+
+\begin{theorem}[Typed Expansion] ~
+  \begin{enumerate}
+    \item If $\expandSyn{\hGamma}{\hexp}{\htau}{\dexp}{\Delta}$ then $\hasType{\Delta}{\hGamma}{\dexp}{\htau}$.
+    \item If $\expandAna{\hGamma}{\hexp}{\htau}{\dexp}{\htau'}{\Delta}$ then $\tconsistent{\htau}{\htau'}$ and $\hasType{\Delta}{\hGamma}{\dexp}{\htau'}$.
+  \end{enumerate}
+\end{theorem}
+
+\begin{theorem}[Expansion Unicity] ~
+  \begin{enumerate}
+    \item If $\expandSyn{\hGamma}{\hexp}{\htau}{\dexp}{\Delta}$ and $\expandSyn{\hGamma}{\hexp}{\htau'}{\dexp'}{\Delta'}$ then $\htau=\htau'$ and $\dexp=\dexp'$ and $\Delta=\Delta'$.
+    \item If $\expandAna{\hGamma}{\hexp}{\htau_1}{\dexp}{\htau_2}{\Delta}$ and $\expandAna{\hGamma}{\hexp}{\htau_1}{\dexp'}{\htau_2'}{\Delta'}$ then $\dexp=\dexp'$ and $\htau_2=\htau_2'$ and $\Delta=\Delta'$.
+  \end{enumerate}
+\end{theorem}
+
+\begin{theorem}[Type Assignment Unicity]
+If $\hasType{\Delta}{\hGamma}{\dexp}{\htau}$ and $\hasType{\Delta}{\hGamma}{\dexp}{\htau'}$ then $\htau=\htau'$.
+\end{theorem}
+
+\begin{theorem}[Progress]
+If $\hasType{\Delta}{\emptyset}{\dexp}{\htau}$ then either $\isValue{\dexp}$ or $\isIndet{\dexp}$ or $\isErr{\Delta}{\dexp}$ or $\stepsTo{\dexp}{\dexp'}$.
+\end{theorem}
+
+\begin{theorem}[Preservation]
+  If $\hasType{\Delta}{\emptyset}{\dexp}{\htau}$ and $\stepsTo{\dexp}{\dexp'}$ then $\hasType{\Delta}{\emptyset}{\dexp'}{\htau}$. \todo{or maybe up to consistency?}
+\end{theorem}
+
+\todo{complete progress + preservation}
+
+\todo{canonical forms}
+
+\todo{indeterminate forms}
