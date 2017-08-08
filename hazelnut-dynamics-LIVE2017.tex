@@ -87,7 +87,7 @@
 \begin{document}
 
 %% Title information
-\title{Live Stepping Typed Expressions with Holes}         %% [Short Title] is optional;
+\title{Toward a Live Stepper for Typed Expressions with Holes}         %% [Short Title] is optional;
                                         %% when present, will be used in
                                         %% header instead of Full Title.
 % \titlenote{with title note}             %% \titlenote is optional;
@@ -171,7 +171,11 @@
 %% Note: \begin{abstract}...\end{abstract} environment must come
 %% before \maketitle command
 \begin{abstract}
-\todo{abstract}
+In order to understand the dynamic behavior of an expression, programmers will often turn to ``steppers'' (a.k.a. ``stepwise debuggers''), i.e. tools that allow the programmer to interactively simplify an expression according to the ``small step'' dynamic semantics of the programming language. The problem that motivates this work is that a standard dynamic semantics assigns meaning only to complete, well-typed expressions, but there are many situations where a programmer might wish to explore the dynamic behavior of an expression well before it is complete. This essay proposes the development of a dynamic semantics for \emph{incomplete expressions}, which we take to mean expressions that have \emph{holes}. Holes indicate portions of the expression that have yet to be filled in, or, following our recent work \citet{popl17}, that have a local type inconsistency that has yet to be resolved. Together with (1) our previously developed static semantics for incomplete expressions, and (2) our previously developed action semantics that gives meaning to edit actions over statically meaningful incomplete expressions, the result would be a program editor where the programmer has access to the stepper at all times,  not just when the program is in a complete state.
+
+Of course, when engaging in live programming -- i.e. programming where editing and evaluation are rapidly interleaved -- this would not be entirely satisfying, because na\"ively, the programmer would need to restart the stepper from the beginning after each edit. To address this problem, this paper further proposes a refinement to the dynamic semantics that tracks the dynamic environment around each hole and its evaluation status. This allows for the specification of a \emph{live stepper}, i.e. a stepper where evaluation can continue where it left off even after holes are filled in, because the current state of the stepper can be ``patched'' to accurately reflect the edit that was made.
+
+This paper reports early progress in these directions -- many technical details have yet to be developed. We hope to discuss both the overall design and the formal aspects of the design with the participants at the LIVE workshop. The paper discusses how prior work on gradual typing and contextual modal type theory has informed our research so far.
 \end{abstract}
 
 
