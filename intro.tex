@@ -15,7 +15,7 @@ sequence of cells (an extension of the read-eval-print loop (REPL)); spreadsheet
 The problem that motivates this paper is that 
 contemporary live programming environments are equipped only to provide feedback, via various editor services, once the program being edited is syntactically well-formed and, when relevant, well-typed. This leaves a temporal and perceptive gap, because programmers sometimes leave a program malformed or ill-typed for extended periods of time (e.g. as they work on another part of the program.)
 
-In view of this problem, we recently developed a \emph{structure editor calculus} called Hazelnut where every edit state consists of a well-formed and statically meaningful, i.e. well-typed, expression with holes \cite{popl-paper}. This calculus addressed fundamental problems relevant to editor services that operate statically, but there was no solution in that paper to the problems faced by editor services characteristic of live programming environments, which also require knowledge of the dynamic meaning of an incomplete program. In particular, a \emph{stepper} (also known as a \emph{step-wise debugger}) quite obviously requires that the expression being stepped be assigned dynamic meaning according to, for example, a small-step operational semantics \cite{DBLP:journals/jlp/Plotkin04a,pfpl}, but no such semantics was defined for the incomplete expressions that arise when using Hazelnut. Defining such a semantics was left as future work in that paper, and in a subsequent ``vision paper'' \cite{snapl17-paper}. The purpose of this paper is to sketch out our progress towards a solution to this problem. Let us immediately emphasize that we have not yet fully solved this problem -- this paper presents work in progress.
+In view of this problem, we recently developed a \emph{structure editor calculus} called Hazelnut where every edit state consists of a well-formed and statically meaningful, i.e. well-typed, expression with holes \cite{popl-paper}. This calculus addressed fundamental problems relevant to editor services that operate statically, but there was no solution in that paper to the problems faced by editor services characteristic of live programming environments, which also require knowledge of the dynamic meaning of an incomplete program. In particular, a \emph{stepper} (also known as a \emph{step-wise debugger}) quite obviously requires that the expression being stepped be assigned dynamic meaning according to, for example, a small-step operational semantics \cite{DBLP:journals/jlp/Plotkin04a,pfpl}, but no such semantics was defined for the incomplete expressions that arise when using Hazelnut. Defining such a semantics was left as future work in that paper, and in a subsequent ``vision paper'' \cite{snapl17-paper}. The purpose of this paper is to sketch out our progress toward a solution.
 
 % \section{Example}
 
@@ -87,25 +87,25 @@ In view of this problem, we recently developed a \emph{structure editor calculus
 
 \newcommand{\linenumber}[1]{{\color{gray} \texttt{#1}}}
 \begin{figure}[ht]
+\vspace{-5px}
 \center
 \small
 \ensuremath{
-\arraycolsep=4pt
+\arraycolsep=3pt
 \begin{array}{rrclcrcl}
-\multicolumn{4}{l}{\textbf{Scenario 1: Testing}}
+\multicolumn{4}{l}{\textbf{Scenario 1: Stepping}}
 &
-&
-\multicolumn{3}{l}{\textbf{Scenario 2: Edit and Resume}}
+\multicolumn{4}{l}{\textbf{Scenario 2: Edit and Resume}}
 \\
 \hline
 &
-\multicolumn{3}{l}{\texttt{fun}~f(x,y) = 3 + x * y {\div} \hehole{\metavar}_{[x/x,y/y]} + 2 * y}
+\multicolumn{3}{l}{\texttt{fun}~f(x,y) = 3 + x * y {\div} \hehole{\metavar}_{[x/x,y/y]} + 2 * x}
 &
 \multicolumn{1}{l}{
 \colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]}$}
 }
 &
-\multicolumn{3}{l}{\texttt{fun}~f(x,y) = 3 + x * y {\div} (x+1) + 2 * y}
+\multicolumn{3}{l}{\texttt{fun}~f(x,y) = 3 + x * y {\div} (x+1) + 2 * x}
 % \\
 % \multicolumn{3}{l}{
 % \colorbox{dVeryFaint}{  
@@ -125,7 +125,7 @@ f(2,3) &\longmapsto & 3 + 2 * 3 {\div} \hehole{\metavar}_{[2/x, 3/y]}  + 2 * 2
 &
 \multicolumn{1}{l}{
 \colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]}$}
-}
+} 
 &
 f(2,3) &{\longmapsto} & {3 + 2 * 3 {\div} (2+1) + 2 * 2}
 \\
@@ -176,48 +176,57 @@ f(2,3) &{\longmapsto} & {3 + 2 * 3 {\div} (2+1) + 2 * 2}
 % }
 \end{array}
 }
-\caption{An example demonstrating (1) evaluation of an incomplete program; (2) support for ``edit-and-resume'' when transitioning between edit states related by an edit that can be understood as hole instantiation.}
+\vspace{-5px}
+\caption{An example demonstrating (1) stepping of an incomplete program; (2) support for ``edit-and-resume'' when transitioning between edit states related by an edit that can be understood as hole instantiation.}
+\vspace{-5px}
 \label{fig:dynamics}
 \end{figure}
 
-\noindent\textbf{Scenario 1: Testing.} Consider the simple incomplete function $f$ defined in Figure \ref{fig:dynamics} (top left).  
+\noindent\textbf{Scenario 1: Stepping.} Consider the definition of the incomplete function $f$ on the top left of Fig. \ref{fig:dynamics}. 
 %
-A hole appears in the denominator of the division. In the previous section,
-holes were unadorned. In this section, it will be helpful to adorn each hole with a unique name, $u$. In addition, each hole is adorned with an \emph{environment} that defines a substitution for each variable in scope
-where the hole appears. Initially, the environment is the appropriate identity substitution -- in this example, $[x/x, y/y]$. 
+This function is incomplete because a hole, notated $\Circle$, appears in its body. In our previous work, holes were unadorned \cite{popl-paper}.\footnote{In our previous work, we notated holes $\tehole$, but $\Circle$ is simpler for our present purposes.} For the purposes of this paper, however, it is helpful to adorn each hole with a unique name, $u$. In addition, each hole is adorned with an \emph{environment}, indicated by a subscript. We will return to consider environments shortly. Our notation here is for the purposes of exposition. In practice, the hole name might be indicated in some other way, e.g. using different colors for different visible holes, and the environment would be maintained internally, rather than shown explicitly to the programmer as an adornment on the hole itself.
 
-A subsequent cell (bottom left) applies $f$ to $2$ and $3$ (perhaps because the programmer intends this to be a test of $f$). Function application operates in the usual way: 
-we substitute $2$ for $x$ and $3$ for $y$ in the body of $f$. Substitution proceeds also into the environment associated with each hole -- here, the environment for hole $u$ becomes $[2/x, 3/y][x/x, y/y] = [2/x, 3/y]$.
+The cell below the definition of $f$ applies $f$ to $2$ and $3$ (because the programmer intends to explore the behavior of $f$ for this choice of input.) Normally, the fact that $f$ is incomplete would prevent the programmer from being able to step this function application -- the programmer would first need to fill in the hole in $f$ with a well-typed term before the stepper could consult the language's operational semantics to proceed with stepping. This is despite the fact that according to a static semantics for incomplete expressions following that described in our previous work, $f$ can still be assigned type $\tarr{\tnum}{\tnum}$ and $f(2, 3)$ can therefore be assigned type $\tnum$ \cite{popl-paper}. Our interest here is in eliminating this restriction, so that we can step the expression $f(2, 3)$ even before completing the definition of $f$. We can do so as shown on Lines 1-6 (left) of Fig. \ref{fig:dynamics}.  Let us consider each step in turn. 
 
-The next step of evaluation proceeds to reduce $2 * 3$ to $6$, again in the usual way.
+The first step (Line 1) operates in essentially the usual way: 
+we substitute $2$ for $x$ and $3$ for $y$ in the body of $f$. The only novelty is that substitution proceeds also into the {environment associated with each hole}. An environment is an $n$-ary substitution mapping variables, $x$, to expressions, $e$, notated in the standard way as $[e_1/x_1, ..., e_n/x_n]$. When stepping starts, the environment associated with each hole is simply the identity environment, here $[x/x, y/y]$, indicating that no substitutions have yet occurred around the hole. Once we apply $f$, the environment for the hole $u$ becomes $[2/x, 3/y][x/x, y/y] = [2/x, 3/y]$. There are two main reasons to maintain an environment around each hole. One is so that the programmer or an editor service in the live programming environment can select a hole in the evaluation trace and inspect the current environment there, to aid in determining how to fill the hole. The second reason has to do with edit-and-resume functionality, which we will return to in Scenario 2 below.
+
+% \todo{note that holes can get duplicated?}
+
+
+Assuming the usual associativity and left-to-right evaluation order for arithmetic expressions, the second step of evaluation (Line 2) proceeds to reduce the subexpression $2 * 3$ to $6$ in exactly the usual way. 
 %
-The next step would divide $6$ by a number, except that the number is
-absent; there is a hole in its place. No evaluation step can be taken. 
+Now we arrive at a critical point in evaluation. The next step, following the usual evaluation order, would divide $6$ by the evaluated divisor, except that the divisor is 
+absent and there is a hole, $u$, in its place. 
+
+One approach here would be to throw our hands up and raise an exception at this point, following the common programmer practice of raising an exception named something like \texttt{Unimplemented} at points in a program that remain to be written. This is the approach that the hole system in the Glasgow Haskell Compiler takes \cite{GCHWIKI}. 
+
+This approach is unsatisfying, however, because there is computation that remains to be done in other parts of the program. We'd like to step \emph{past} the hole and evaluate as much as we can elsewhere (at least, in a pure functional setting.) We do so by way of the third step (Line 3), which simply marks the hole as having been evaluated by coloring it in, $\CIRCLE$. We will return to why tracking the evaluation status of each hole instance is helpful in Scenario 2 below.
+
+Because the hole appears as a divisor, we cannot reduce the sub-expression $6 {\div} \heholechk{\metavar}_{[2/x, 3/y]}$ any further. That, in turn, also prevents us from reducing the sub-expression $3 + 6 {\div} \heholechk{\metavar}_{[2/x, 3/y]}$ any further. However, we can move on as shown on Line 6 to the sub-expression $2 * 2$, which reduces to $4$. At this point, there are no further steps that can be taken. 
 %
-Normally, this would violate the classical notion of Progress -- 
-evaluation can neither proceed, nor has it produced a value. We conjecture that this is
-resolved by (1) positively characterizing \emph{indeterminate} 
-evaluation states, those where a hole blocks progress at all locations
+This seems to violate the classical notion of Progress, which is one half of the classical Type Safety theorem \cite{milner1978theory,pfpl}, in that we claimed that the expression being stepped is well-typed, but 
+evaluation can neither proceed, nor has it produced a value. However, this violation is not due to missing rules in our semantics -- there is simply nothing more we can do. We conjecture that this theoretical problem can therefore be solved by (1) positively characterizing \emph{indeterminate} 
+evaluation states, i.e. those where a hole blocks progress at all locations
 within the expression, and (2) defining
 a notion of Indeterminate Progress that allows for evaluation to stop at an 
-indeterminate evaluation state. This ``fix'' is in some ways analagous to the fix needed when introducing 
-run-time errors into a language \cite{pfpl}.\footnote{%
-This example is similar to the example shown in cell~\textbf{(c)} in
-Figure~\ref{fig:hazel-mockup}, except that there, we also applied
-the heuristic that we should not step
-into the definition of {std} because it was defined in an imported library.}
+indeterminate evaluation state, in addition to a value. This ``fix'' is in some ways analagous to the fix needed when introducing 
+run-time errors into a language \cite{pfpl}. A careful evaluation of this conjecture using the Agda proof assistant \cite{norell2009dependently} is ongoing work.
 
-\vspace{0.25ex}
+Before moving on to Scenario 2, there is one more important issue to consider. In the example in Fig. \ref{fig:dynamics}, there were only expression holes, but in the full calculus, there can also be type holes. An observation made in our previous work was that the machinery for reasoning about type holes coincides with that for reasoning about unknown types in gradual type theory \cite{Siek06a}. Our conjecture is therefore that the machinery needed to step gradually typed programs will also allow us to step incomplete programs that have type holes. In particular, there will be a need for run-time type checking based on cast insertion, so as to handle well-typed but erroneous programs like $(3 : \Circle)(4)$. 
+
+\vspace{1ex}
 \noindent\textbf{Scenario 2: Edit and Resume.}
-Suppose the programmer decides that the denominator should
-be $x+1$, and, through some sequence of edits (considered formally in the next section), arrives at 
-the new definition of $f$ shown on the top right of Figure \ref{fig:dynamics}. This edit state is now complete -- no holes remain -- so the live programming environment 
-could evaluate $f(2, 3)$ in the usual way by taking the steps shown on
-the bottom right of Figure \ref{fig:dynamics} (including the first
-grayed out step).
+Suppose now that the programmer decides that the hole $u$ should
+ be filled by the expression $x+1$, and, through some sequence of edit actions (considered formally in our prior work), arrives at 
+the new definition of $f$ shown on the top right of Figure \ref{fig:dynamics}. This function $f$ is now complete -- no holes remain -- so the live programming environment 
+could restart evaluation of $f(2, 3)$ and proceed in the usual way by taking the steps shown on
+the right of Fig. \ref{fig:dynamics}, ultimately arriving on Line 7 at the final result of $9$.
 
-However, if the editor has already computed the indeterminate evaluation 
-state from the version of $f$ with a hole, and it also knows that the 
+The problem here is that when live programming, it might not be desirable to restart stepping from the beginning on each such edit, both for reasons of convenience and performance. A programmer particularly interested in some intermediate evaluation state, e.g. any of Lines 1, 2, 3 or 6 on the left of Fig. \ref{fig:dynamics}, would have to engage with the stepper to return to the corresponding edit state on the right of Fig. \ref{fig:dynamics} after the edit, and incur the dynamic cost of doing so.
+
+A better design would be one where if the editor has already computed an evaluation 
+state from the version of $f$ with a hole, and  
 two edit states differ only up to \emph{hole instantiation}, written 
 $[\!| (x+1) / u
 |\!]$, then it can take advantage of an important commutativity property that we aim 
@@ -225,35 +234,41 @@ to prove about our dynamics: that
 \emph{hole instantiation commutes with evaluation}. 
 
 Hole instantiation, $[\!| \hexp / u |\!]\hexp'$ is similar to substitution, except that it acts on
- hole(s) named $u$ in $\hexp'$. At each such hole, the corresponding substitution is applied to $\hexp$. For example,
-% $[\!| x + 1 / u |\!]\hehole^\metavar_{[2/x, 3/y]} = 2 + 1$. 
+ hole(s) named $u$ in $\hexp'$. At each such hole, the corresponding substitution is applied to $\hexp$. For example, on Line 1, we replace the hole $u$ on the left with $[2/x,3/y](x+1) = 2 + 1$ on the right to arrive at the corresponding evaluation state. The same can be done on Line 2, allowing us to skip Line 1 entirely. On Line 3, hole instantiation operates a bit differently because the hole $u$ has been evaluated -- we now instantiate the hole with the value $[2/x, 3/y](x + 1)$, which is $3$. 
+% $[\!| x + 1 / u |\!]\hehole^\metavar_{[2/x, 3/y]} = 2 + 1$.
 
-Assuming hole instantiation commutes with evaluation, then it suffices to start from any indeterminate evaluation 
-state previously computed and perform hole instantiation on it. After doing so, evaluation can resume. The end result is guaranteed to coincide with that of evaluating the new version of $f$ from scratch. In Figure \ref{fig:dynamics}, this implies that we need not perform the two grayed out evaluation steps. This relates to PI Hammer's
+More generally, our conjecture is that it suffices to start from any indeterminate evaluation 
+state previously computed and perform hole instantiation on it. After doing so, evaluation can resume. The end result is guaranteed to coincide with that of evaluating the new version of $f$ from scratch. This might require some number of additional steps, as indicated by the $\mapsto^{*}$ connective on Line 6.
+
+
+
+
+% In Figure \ref{fig:dynamics}, this implies that we need not perform the two grayed out evaluation steps. 
+
+This relates to 
 ongoing research into combining general-purpose incremental
 computation (IC) with static analysis~\cite{OVV2016}. 
 %
 Currently, IC research focuses on input
 changes~\citep{TypedAdapton2016, Fisher2016, Hammer2015, Chen2014,
 Hammer2014, Chen2011, Hammer2011, Hammer2009, Hammer2008}, whereas the
-work proposed here considers incremental \emph{program changes}.
+mechanism proposed here considers incremental \emph{program changes}.
 
 The notion of holes being associated with unique names and substitutions, and the notion of hole instantiation just described, is borrowed directly from work in \emph{contextual modal type theory (CMTT)} \cite{Nanevski2008}. Hole names correspond to \emph{metavariables} and holes themselves to \emph{closures}. CMTT is, in turn, the Curry-Howard interpretation of contextual modal logic. This gives us confidence that our approach is not \emph{ad hoc}, but rather rooted in the established logical tradition.
 
-\subsection{Proposed Research}
-
-\noindent\textbf{Core Semantics.} The preliminary work outlined above, with its roots in CMTT, suggests a theoretical foundation for moving forward. However, there remain two major missing pieces:
+\vspace{1ex}
+\noindent\textbf{Next Steps.} The preliminary work outlined above, with its roots in gradual type theory and CMTT, suggests a theoretical foundation for moving forward. However, there remain some major missing pieces, on both the theoretical and implementation sides.
 
 First, CMTT does not come equipped with a dynamic semantics that supports evaluation of terms with free metavariables, which is precisely what we require (see Scenario 1, above). As such, we need to formally develop the notion of an \emph{indeterminate evaluation state}, define a dynamics that can handle free metavariables, and formally state and prove our Indeterminate Progress and commutativity conjectures. We also need to carefully consider how non-termination (and, perhaps, other effects) affects the commutativity property.
 
 Second, CMTT's closures nicely handle empty expression holes, but non-empty holes, type holes, and other problems that we plan to internalize with our statics need to be considered carefully. Non-empty holes can likely be understood as a simple variation on empty holes. In the previous section, we discussed the relationship between type holes and gradual typing. Work in gradual typing appears to provide one solution to the problem of evaluating terms with type holes (by inserting run-time casts \cite{Siek06a}.) This suggests that a comprehensive dynamics for incomplete programs, i.e. one that assigns dynamic meaning to every statically meaningful incomplete program, will require developing a \emph{gradual contextual modal type theory} (GCMTT).
 
-\paragraph{Further Developments.} There are several more practical applications that we aim to explore after developing the initial foundations just described.
+We also need to develop a semantics that characterizes when two edit states are related by hole instantiation. There are two ways to approach this: as a function of the ``diff'' between the two edit states; and 2) as a function of an edit action that was actually performed (see the next section.)
 
-It would be useful for the programmer to be able to select a hole that appears in an indeterminate state and 1) be taken to its original location; 2) be able to inspect the \emph{value} of a subexpression under the cursor in the environment of the selected hole (rather than just its type.)
+There are several more practical design questions that we aim to explore after developing the initial foundations just described. First is of course that we need a useful baseline stepper for Hazelnut, with support for skipping tedious intermediate steps and displaying large terms in a readable manner. We are calling our ongoing design Hazelnut Live. Ultimately, this will be merged into the full-scale design that we are pursuing called Hazel \cite{snapl17-paper}.
 
-We need to develop a semantics that characterizes when two edit states are related by hole instantiation. There are two ways to approach this: as a function of the ``diff'' between the two edit states; and 2) as a function of an edit action that was actually performed (see the next section.)
+It would be useful for the programmer to be able to select a hole that appears in an indeterminate state and 1) be taken to its original location; 2) be able to inspect the \emph{value} of a subexpression under the cursor in the environment of the selected hole (rather than just its type.) This corresponds to ``watches'' and ``stack inspection'' in standard debuggers.
 
 IPython/Jupyter \cite{Perez:2007:ISI:1251563.1251831} supports a feature whereby numeric variable(s) in cells can be marked as being ``interactive'', which causes the user interface to display a slider. As the slider value changes, the new value of the cell is recomputed. It would be useful to be able to use the mechanisms just described to incrementalize parts of this recomputation automatically.
 
-
+Ultimately, we believe that this work will provide a foundation for live programming environments for statically typed programming languages that behave far less rigidly than one might expect, because holes in both expressions and types do not prevent us from dynamically exploring the program being written.
