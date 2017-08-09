@@ -1,255 +1,184 @@
 % !TEX root = hazelnut-dynamics-LIVE2017.tex
-\newcommand{\introSec}{Introduction}
-\section{\protect\introSec}
-\label{sec:intro}
+% \newcommand{\introSec}{Introduction}
+% \section{\protect\introSec}
+% \label{sec:intro}
 
 Broadly speaking, live programming environments are those that granularly interleave editing and evaluation \cite{DBLP:conf/icse/Tanimoto13,DBLP:journals/vlc/Tanimoto90,McDirmid:2007:LUL:1297027.1297073,burckhardt2013s}. 
 In the words of \citet{burckhardt2013s}, live programming environments 
-``capture the imagination of today's programmers and promise to narrow the temporal and perceptive gap 
-between program development and code execution''. Examples include {lab notebook environments},
+``promise to narrow the temporal and perceptive gap 
+between program development and code execution''. Examples of live programming environments include {lab notebook environments},
 e.g. the popular IPython/Jupyter~\cite{PER-GRA:2007}, which allow the
 programmer to interactively edit and evaluate program fragments organized into a
-sequence of cells (an extension of the read-eval-print loop (REPL)); spreadsheets; {live graphics programming environments}, e.g. SuperGlue \cite{McDirmid:2007:LUL:1297027.1297073}, Sketch-n-Sketch \cite{DBLP:conf/pldi/ChughHSA16} and the tools demonstrated by Bret Victor in his lectures \cite{victor2012inventing}; the TouchDevelop live UI framework \cite{Burckhardt:2013:ACF:2491956.2462170}; and live visual and auditory dataflow languages \cite{DBLP:conf/vl/BurnettAW98}, to name just a few prominent examples.
+sequence of cells (an extension of the read-eval-print loop (REPL)); spreadsheets; {live graphics programming environments} like SuperGlue \cite{McDirmid:2007:LUL:1297027.1297073}, Sketch-n-Sketch \cite{DBLP:conf/pldi/ChughHSA16} and the tools demonstrated by Bret Victor in his lectures \cite{victor2012inventing}; the TouchDevelop live UI framework \cite{Burckhardt:2013:ACF:2491956.2462170}; and live visual and auditory dataflow languages \cite{DBLP:conf/vl/BurnettAW98}, to name just a few prominent examples.
 
 
 The problem that motivates this paper is that 
-contemporary live programming environments are equipped only to provide feedback, via various editor services, once the program or 
-program fragment being evaluated is syntactically well-formed and, when relevant, well-typed. This leaves a temporal and perceptive gap, because programmers sometimes leave a program malformed or ill-typed, sometimes for extended periods (e.g. as they work on another part of the program.)
+contemporary live programming environments are equipped only to provide feedback, via various editor services, once the program being edited is syntactically well-formed and, when relevant, well-typed. This leaves a temporal and perceptive gap, because programmers sometimes leave a program malformed or ill-typed for extended periods of time (e.g. as they work on another part of the program.)
 
-In our recent work, we developed a \emph{structure editor calculus} called Hazelnut where every edit state consists of a well-formed and statically meaningful, i.e. well-typed, expression with holes \cite{popl-paper}. This calculus addressed fundamental problems relevant to editor services that require knowing the form and the static meaning of the incomplete expression being edited, but there was no solution in that paper to the problems faced by editor services that require knowledge of the dynamic meaning of an incomplete expression. In particular, a \emph{stepper} (also known as a \emph{step-wise debugger}) quite obviously requires that the expression being stepped be assigned dynamic meaning according to, for example, a small-step operational semantics \cite{citation}.
+In view of this problem, we recently developed a \emph{structure editor calculus} called Hazelnut where every edit state consists of a well-formed and statically meaningful, i.e. well-typed, expression with holes \cite{popl-paper}. This calculus addressed fundamental problems relevant to editor services that operate statically, but there was no solution in that paper to the problems faced by editor services characteristic of live programming environments, which also require knowledge of the dynamic meaning of an incomplete program. In particular, a \emph{stepper} (also known as a \emph{step-wise debugger}) quite obviously requires that the expression being stepped be assigned dynamic meaning according to, for example, a small-step operational semantics \cite{DBLP:journals/jlp/Plotkin04a,pfpl}, but no such semantics was defined for the incomplete expressions that arise when using Hazelnut. Defining such a semantics was left as future work in that paper, and in a subsequent ``vision paper'' \cite{snapl17-paper}. The purpose of this paper is to sketch out our progress towards a solution to this problem. Let us immediately emphasize that we have not yet fully solved this problem -- this paper presents work in progress.
 
+% \section{Example}
 
+%% \begin{figure}[ht]
+%% \center
+%% \small
+%% \ensuremath{
+%% \begin{array}{rclcrcl}
+%% \multicolumn{3}{l}{\textbf{\ScenerioOne: Test, Suspend, Edit}}
+%% &
+%% &
+%% \multicolumn{3}{l}{\textbf{\ScenerioTwo: Edit, Test}}
+%% \\
+%% \hline
+%% \texttt{fun}~f(x,y) &=& 3 + x * y {\div} \hehole^\metavar_\textrm{id}
+%% &
+%% &
+%% \texttt{fun}~f(x,y) &=& 3 + x * y {\div} \hehole^\metavar_\textrm{id}
+%% \\
+%% \multicolumn{3}{l}{
+%% \colorbox{dVeryFaint}{  
+%% \textrm{where}~$\textrm{id} = [x/x, y/y]$
+%% }}
+%% &
+%% &
+%% \multicolumn{3}{l}{
+%% \colorbox{dVeryFaint}{  
+%% \textrm{where}~$\textrm{id} = [x/x, y/y]$
+%% }}
+%% \\
+%% &&&&
+%% \desc{Insert~$(x+1)$}& \leadsto & 3 + x * y {\div} \hehole{x+1}^\metavar_\textrm{id}
+%% \\
+%% &&&&
+%% \desc{Finalize}& \leadsto & 3 + x * y {\div} (x+1)
+%% \\[2mm]
+%% % - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+%% \hline
+%% f(2,3) &\longmapsto & 3 + 2 * 3 {\div} \hehole^\metavar_\sigma
+%% &&
+%% f(2,3) &\longmapsto & 3 + 2 * 3 {\div} (2+1)
+%% \\
+%% &\longmapsto& 3 + 6 {\div} \hehole^\metavar_\sigma
+%% &
+%% %% \multicolumn{2}{l}{
+%% %% \colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]~\circ~{\textsf{det}}}$}
+%% %% }
+%% \multicolumn{1}{l}{
+%% \colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]}$}
+%% }
+%% && \longmapsto& 3 + 6 {\div} (2 + 1)
+%% \\
+%% &\longmapsto& 3 + \indetaction{\lfloor} 6 {\div} \hehole^\metavar_{\sigma} \indetaction{\rfloor}
+%% &&& \longmapsto& 3 + 2
+%% \\
+%% &\longmapsto& \indetaction{\lfloor} 3 + \lfloor 6 {\div} \hehole^\metavar_\sigma \rfloor \indetaction{\rfloor}
+%% &&& \longmapsto& 5
+%% \\
+%% \multicolumn{3}{r}{
+%%         \colorbox{dVeryFaint}{
+%%           \textrm{where}~$\sigma = [2/x,3/y]$
+%%         }
+%% }
+%% \end{array}
+%% }
+%% \caption{Two testing scenerios, related by the edit~$[\!| (x+1) / u |\!]$ (CMTT hole instantiation).}
+%% \label{fig:dynamics}
+%% \end{figure}
 
-
-
-Listing \ref{fig:hazel-mockup} showed an example where
-useful information---the column-wise mean---can be extracted from an incomplete program, even though a final value cannot be computed. It is not difficult to imagine other such scenarios.
-
-The second specific aim of this proposal is to develop a semantics that characterizes exactly how
-evaluation of an incomplete program should proceed. A related semantic question (which is also of 
-substantial practical relevance) has to do with how 
-evaluation and editing interact: it should, ideally, be possible to avoid restarting
-evaluation ``from scratch'' after every edit to the program.
-
-%% \todo{It would be nice if we could more explicitly separate
-%% out concrete research objectives from the overview, to lay it out
-%% really simply for the reader.  CLG is having a hard time detangling
-%% them; perhaps Matt or Cyrus could try?}
-
-%
-%In particular, the programmer uses this interface to edit the
-%expression that they are running, while making edits ``retroactive''
-%when they choose to do so.
-%
-% CLG says:  I think that the multiple levels of intro to the idea by pointing
-% to the Hazel mockup and walking through the scenarios is really helpful for
-% clarity.  BUT we also don't have room for them, and so I made the executive
-% decision to keep the code 
-% For example, in Figure~\ref{fig:hazel-mockup}, cells~$a$ and~$c$ are related by
-% evaluation.
-% %
-% Cell~$a$ defines an incomplete function, \texttt{summary\_stats}, and
-% cell~$c$ shows the call for and result of invoking this function on a
-% concrete input, the matrix constant defined in cell~$b$.
-% %
-% This result in cell~$c$ is \emph{incomplete} since it
-% depends on an incomplete function in cell~$a$.
-% %
-% Suppose that the programmer wants to finish this program by using
-% dynamic information that is kept ``live'', or up-to-date, with the
-% program as they edit.  In particular, they wish to mix
-% editing these holes with the live relationship between cells~$a$
-% and~$c$, where the latter is the output of running the former.
-%
-% First, notice that in cell~$c$, the hole in field~\texttt{std} can be
-% attributed uniquely to the field~\texttt{std} hole in cell~$a$.
-% %
-% This is an instance of a more general property that we refer to
-% as \textbf{hole provenance}.
-% %
-% Suppose that the user edits this hole, choosing to enter the abstract
-% constant \texttt{ColumnWise}.
-% %
-% We can imagine this interacting with evaluation in one of two ways:
-% First, we imagine editing the hole in cell~$c$, and permitting
-% cell~$c$ to evaluate further, to produce, say, cell~$d$ (not shown).
-% %
-% Second, we imagine \emph{retroactively editing} the hole in cell~$a$,
-% and updating the evaluation of cell~$c$ to reflect this edit.
-% %
-% In fact, we expect that the results from these two scenerios are the
-% same, which is an instance of more a general property: \emph{hole
-% evaluation commutes with hole edits}.
-% %
-% Finally, if there are several holes in the program, the terms that are
-% separated across hole boundaries cannot interact, giving the property
-% that \emph{inter-hole evaluation commutes}.
-% %
-% Each of these meta-theoretic properties supports formal reasoning
-% about live programming, that is, interposing evaluation and program
-% edits into a unified system, with a semantics that enforces that
-% edited programs always carry static and dynamic meanings.
-
-%% At a high level, \HazelML with dynamics provides a foundation for
-%% running partial programs, viz., programs that have holes.
-%% %
-%% Further, \HazelML permits partially-typed programs, where potential
-%% type-mismatches are explicitly designated by hole-based boundaries.
-%% %
-%% Since we assign types to these programs, we should try to assign them
-%% a dynamic behavior, in the support of richer interactive programming
-%% experiences, such as mixing editing and testing.
-%
-%The formalization of \Hazel stratifies the program being edited from
-%the program that edits it.
-%
-%The former may consist of a subset of ML, or another typed language,
-%augmented with the core concepts informed by \Hazelnut: Expressions
-%and types each admit holes, which may be either empty or non-empty, in
-%which case they hold an expression whose type does not match the
-%surrounding context of the hole.
-%
-
-% \subsection{Preliminary Work} 
-
-% %% \begin{figure}[ht]
-% %% \center
-% %% \small
-% %% \ensuremath{
-% %% \begin{array}{rclcrcl}
-% %% \multicolumn{3}{l}{\textbf{\ScenerioOne: Test, Suspend, Edit}}
-% %% &
-% %% &
-% %% \multicolumn{3}{l}{\textbf{\ScenerioTwo: Edit, Test}}
-% %% \\
-% %% \hline
-% %% \texttt{fun}~f(x,y) &=& 3 + x * y {\div} \hehole{}^\metavar_\textrm{id}
-% %% &
-% %% &
-% %% \texttt{fun}~f(x,y) &=& 3 + x * y {\div} \hehole{}^\metavar_\textrm{id}
-% %% \\
-% %% \multicolumn{3}{l}{
-% %% \colorbox{dVeryFaint}{  
-% %% \textrm{where}~$\textrm{id} = [x/x, y/y]$
-% %% }}
-% %% &
-% %% &
-% %% \multicolumn{3}{l}{
-% %% \colorbox{dVeryFaint}{  
-% %% \textrm{where}~$\textrm{id} = [x/x, y/y]$
-% %% }}
-% %% \\
-% %% &&&&
-% %% \desc{Insert~$(x+1)$}& \leadsto & 3 + x * y {\div} \hhole{x+1}^\metavar_\textrm{id}
-% %% \\
-% %% &&&&
-% %% \desc{Finalize}& \leadsto & 3 + x * y {\div} (x+1)
-% %% \\[2mm]
-% %% % - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-% %% \hline
-% %% f(2,3) &\longmapsto & 3 + 2 * 3 {\div} \hehole{}^\metavar_\sigma
-% %% &&
-% %% f(2,3) &\longmapsto & 3 + 2 * 3 {\div} (2+1)
-% %% \\
-% %% &\longmapsto& 3 + 6 {\div} \hehole{}^\metavar_\sigma
-% %% &
-% %% %% \multicolumn{2}{l}{
-% %% %% \colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]~\circ~{\textsf{det}}}$}
-% %% %% }
-% %% \multicolumn{1}{l}{
-% %% \colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]}$}
-% %% }
-% %% && \longmapsto& 3 + 6 {\div} (2 + 1)
-% %% \\
-% %% &\longmapsto& 3 + \indetaction{\lfloor} 6 {\div} \hehole{}^\metavar_{\sigma} \indetaction{\rfloor}
-% %% &&& \longmapsto& 3 + 2
-% %% \\
-% %% &\longmapsto& \indetaction{\lfloor} 3 + \lfloor 6 {\div} \hehole{}^\metavar_\sigma \rfloor \indetaction{\rfloor}
-% %% &&& \longmapsto& 5
-% %% \\
-% %% \multicolumn{3}{r}{
-% %%         \colorbox{dVeryFaint}{
-% %%           \textrm{where}~$\sigma = [2/x,3/y]$
-% %%         }
-% %% }
-% %% \end{array}
-% %% }
-% %% \caption{Two testing scenerios, related by the edit~$[\!| (x+1) / u |\!]$ (CMTT hole instantiation).}
-% %% \label{fig:dynamics}
-% %% \end{figure}
-
-
-% \begin{figure}[ht]
-% \center
-% \small
-% \ensuremath{
-% \begin{array}{rclcrcl}
-% \multicolumn{3}{l}{\textbf{\ScenerioOne: Testing}}
-% &
-% &
-% \multicolumn{3}{l}{\textbf{\ScenerioTwo: Edit and Resume}}
+\newcommand{\linenumber}[1]{{\color{gray} \texttt{#1}}}
+\begin{figure}[ht]
+\center
+\small
+\ensuremath{
+\arraycolsep=4pt
+\begin{array}{rrclcrcl}
+\multicolumn{4}{l}{\textbf{Scenario 1: Testing}}
+&
+&
+\multicolumn{3}{l}{\textbf{Scenario 2: Edit and Resume}}
+\\
+\hline
+&
+\multicolumn{3}{l}{\texttt{fun}~f(x,y) = 3 + x * y {\div} \hehole{\metavar}_{[x/x,y/y]} + 2 * y}
+&
+\multicolumn{1}{l}{
+\colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]}$}
+}
+&
+\multicolumn{3}{l}{\texttt{fun}~f(x,y) = 3 + x * y {\div} (x+1) + 2 * y}
 % \\
-% \hline
-% \multicolumn{3}{l}{\texttt{fun}~f(x,y) = 3 + x * y {\div} \hehole{}^\metavar_{[x/x,y/y]}}
+% \multicolumn{3}{l}{
+% \colorbox{dVeryFaint}{  
+% \textrm{where}~$\textrm{id} = [x/x, y/y]$
+% }}
 % &
+% &
+%\multicolumn{3}{l}{
+%\colorbox{dVeryFaint}{  
+%\textrm{where}~$\textrm{id} = [x/x, y/y]$
+%}}
+\\
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\hline
+\linenumber{1} & 
+f(2,3) &\longmapsto & 3 + 2 * 3 {\div} \hehole{\metavar}_{[2/x, 3/y]}  + 2 * 2
+&
+\multicolumn{1}{l}{
+\colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]}$}
+}
+&
+f(2,3) &{\longmapsto} & {3 + 2 * 3 {\div} (2+1) + 2 * 2}
+\\
+\linenumber{2} & 
+&\longmapsto& 3 + 6 {\div} \hehole{\metavar}_{[2/x, 3/y]} + 2 * 2
+&
+\multicolumn{1}{l}{
+\colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]}$}
+}
+&& {\longmapsto} & {3 + 6 {\div} (2 + 1) + 2 * 2}
+\\
+\linenumber{3} &
+&\longmapsto & 3 + 6 {\div} \heholechk{\metavar}_{[2/x, 3/y]} + 2 * 2
+% \multicolumn{3}{l}{
+%         \colorbox{dVeryFaint}{
+%           \textrm{where}~$\sigma = [2/x,3/y]$
+%         }
+% }
+%&&
+% &\longmapsto& 3 + \indetaction{\lfloor} 6 {\div} \hehole^\metavar_{\sigma} \indetaction{\rfloor}
+&\multicolumn{1}{l}{
+\colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]}$}
+}
+&& \longmapsto& {3 + 6 {\div} 3 + 2 * 2}
+\\
+\linenumber{4} &
+&&
+&&& \longmapsto& 3 + 2 + 2 * 2
+\\
+\linenumber{5} &
+&&
+&&& \longmapsto & 5 + 2 * 2
+\\
+\linenumber{6} &
+& \longmapsto &3 + 6 {\div} \heholechk{\metavar}_{[2/x, 3/y]} + 4 
+% &\longmapsto& \indetaction{\lfloor} 3 + \lfloor 6 {\div} \hehole^\metavar_\sigma \rfloor \indetaction{\rfloor}
+&
+\multicolumn{1}{l}{
+\colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]}\mapsto^{*}$}
+}
+&& \longmapsto & 5 + 4
+\\
+\linenumber{7} &
+&& 
+&&& \longmapsto & 9
 % \multicolumn{1}{l}{
 % \colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]}$}
 % }
-% &
-% \multicolumn{3}{l}{\texttt{fun}~f(x,y) = 3 + x * y {\div} (x+1)}
-% % \\
-% % \multicolumn{3}{l}{
-% % \colorbox{dVeryFaint}{  
-% % \textrm{where}~$\textrm{id} = [x/x, y/y]$
-% % }}
-% % &
-% % &
-% %\multicolumn{3}{l}{
-% %\colorbox{dVeryFaint}{  
-% %\textrm{where}~$\textrm{id} = [x/x, y/y]$
-% %}}
-% \\[2mm]
-% % - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-% \hline
-% f(2,3) &\longmapsto & 3 + 2 * 3 {\div} \hehole{}^\metavar_{[2/x, 3/y]}
-% &
-% % \multicolumn{1}{l}{
-% % \colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]}$}
-% % }
-% &
-% f(2,3) &{\color{gray} \longmapsto} & {\color{gray} 3 + 2 * 3 {\div} (2+1)}
-% \\
-% &\longmapsto& 3 + 6 {\div} \hehole{}^\metavar_{[2/x, 3/y]}
-% &
-% %% \multicolumn{2}{l}{
-% %% \colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]~\circ~{\textsf{det}}}$}
-% %% }
-% \multicolumn{1}{l}{
-% \colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]}$}
-% }
-% && {\color{gray} \longmapsto} & 3 + 6 {\div} (2 + 1)
-% \\
-% &&
-% % \multicolumn{3}{l}{
-% %         \colorbox{dVeryFaint}{
-% %           \textrm{where}~$\sigma = [2/x,3/y]$
-% %         }
-% % }
-% %&&
-% % &\longmapsto& 3 + \indetaction{\lfloor} 6 {\div} \hehole{}^\metavar_{\sigma} \indetaction{\rfloor}
-% &&& \longmapsto& 3 + 6 {\div} 3
-% \\
-% &&
-% % &\longmapsto& \indetaction{\lfloor} 3 + \lfloor 6 {\div} \hehole{}^\metavar_\sigma \rfloor \indetaction{\rfloor}
-% &&& \longmapsto& 3 + 2
-% \\
-% &&
-% &&& \longmapsto& 5
-% \end{array}
-% }
-% \caption{An example demonstrating 1) evaluation of an incomplete program; 2) support for ``edit-and-resume'' when transitioning between edit states related by some edit that can be understood as hole instantiation.}
-% \label{fig:dynamics}
-% \end{figure}
+\end{array}
+}
+\caption{An example demonstrating (1) evaluation of an incomplete program; (2) support for ``edit-and-resume'' when transitioning between edit states related by an edit that can be understood as hole instantiation.}
+\label{fig:dynamics}
+\end{figure}
 
 \noindent\textbf{Scenario 1: Testing.} Consider the simple incomplete function $f$ defined in Figure \ref{fig:dynamics} (top left).  
 %
@@ -297,7 +226,7 @@ to prove about our dynamics: that
 
 Hole instantiation, $[\!| \hexp / u |\!]\hexp'$ is similar to substitution, except that it acts on
  hole(s) named $u$ in $\hexp'$. At each such hole, the corresponding substitution is applied to $\hexp$. For example,
-% $[\!| x + 1 / u |\!]\hehole{}^\metavar_{[2/x, 3/y]} = 2 + 1$. 
+% $[\!| x + 1 / u |\!]\hehole^\metavar_{[2/x, 3/y]} = 2 + 1$. 
 
 Assuming hole instantiation commutes with evaluation, then it suffices to start from any indeterminate evaluation 
 state previously computed and perform hole instantiation on it. After doing so, evaluation can resume. The end result is guaranteed to coincide with that of evaluating the new version of $f$ from scratch. In Figure \ref{fig:dynamics}, this implies that we need not perform the two grayed out evaluation steps. This relates to PI Hammer's
