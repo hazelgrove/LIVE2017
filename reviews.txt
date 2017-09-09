@@ -1,0 +1,109 @@
+Review #13A
+===========================================================================
+
+Overall merit
+-------------
+5. Strong accept
+
+Reviewer expertise
+------------------
+3. Knowledgeable
+
+Paper summary
+-------------
+This paper extends previous work on a bidirectionally-typed structure editor
+"calculus" called Hazelnut. This is a really interesting and well-grounded line
+of work that adapts established PL techniques to the engineering of programming
+environments.
+
+The present work considers how to extend Hazelnut with a dynamic semantics for
+partial programs. In Hazelnut programs can be partial in two senses: some of the
+program can be missing, while other parts may have a type incompatible with the
+containing context. (I'm unsure as to whether the former is just a special case
+of the latter.) A dynamic semantics for holes would allow the user to execute
+programs that are incomplete in either of these senses. This is a crucial step
+towards the authors' larger goal of formalising a live programming "edit and
+resume" calculus that allows edit actions and execution steps to be interwoven.
+
+The "edit and resume" aspect of the proposal is the most relevant to the
+workshop and should generate an interesting discussion. A nice aspect of the
+work is the connection to contextual modal type theory (CMTT). The authors also
+suggest a connection to gradual typing, which would require further theoretical
+work, including further developments of CMTT.
+
+Overall, this is an excellent paper and would make a valuable contribution to
+the workshop.
+
+Comments for author
+-------------------
+The authors may find useful ideas in my own work on dynamic semantics for
+programs with holes:
+
+  Functional Programs that Explain Their Work (ICFP 2012)
+  Imperative Functional Programs That Explain Their Work (ICFP 2017)
+
+Although the setting in these works is big-step and untyped, the computation is
+able to proceed in the presence of holes, analogous to how you wish to allow
+your small-step semantics to step "over" holes. This might suggest how to
+generalise progress theorems to programs with holes: you could extend
+_values_ with holes, and then have a theorem that says an expression that cannot
+reduce any more must have reduced to a value with holes. Then your conjecture
+that hole instantiation commutes with evaluation may turn out to be related to
+whether evaluation preserves meets/joins if you consider holes to induce a
+semilattice structure on programs and values.
+
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+
+Review #13B
+===========================================================================
+
+Overall merit
+-------------
+4. Accept
+
+Reviewer expertise
+------------------
+3. Knowledgeable
+
+Paper summary
+-------------
+This work introduces the idea of assigning formal dynamic semantic to programs that contain holes - e.g. missing expressions, in a pure functional context.
+
+Comments for author
+-------------------
+This paper addresses an important problem of relevance - how do we think about the semantics of a program that is under development and therefore necessarily incomplete? Can we use that reasoning to avoid having to re-execute the program after each update?
+
+I think the analysis is valuable, and the Live programming community will benefit from the formal analysis of its domain. Too much of the reasoning at the moment is done in an ad-hoc manner.
+
+This said, the paper at the moment contains serious weaknesses, mainly due to the lack of consideration of human aspects of the design (which in fairness the authors acknowledge in the introduction), and some overly broad and occasionally false claims (see below). I put this down to the meeting of new communities, and think that it indicates that the paper should be accepted and discussed - though possibly substantially revised after the workshop and before the proceedings if that is possible.
+
+- My first serious concern is whether there is a mismatch between the tooling and the domain of application. The tooling as it is currently described applies to functional languages, as do the claims about developer behaviour (e.g. ' programmers will o‰ften turn to a “stepper” to interactively simplify the expression') -- I don't think that's how programmers working in an imperative language think about what they're doing.
+
+It would be helpful to be much more explicit about this choice of domain up front. It is not obvious to me how many developers in a functional language actually use tools like steppers. I'm not saying they don't, but I would appreciate seeing at least anecdotal data to justify the claims for behaviour (e.g. pointing out that steppers exist for most production functional languages would be sufficient).
+
+nit: The examples of live programming don't include the only heavily used live functional programming environment, Excel, which could badly use a stepper.
+
+The second major concern is the claim that: "‘The problem that motivates this paper is that contemporary live programming environments are equipped only to provide feedback, via various editor services, once the program being edited is syntactically well-formed and, when relevant, well-typed" is incorrect in the general case, it _may_ be correct for functional languages. For example, within the ICLC community, it is a paradigmatic activity to [publically] execute programs that are substantially incomplete, and the strategies authors develop for dealing with them, see e.g. https://zenodo.org/record/18749#.Wa3y4pN94qI
+
+Production systems with live development components, such as Flutter (https://flutter.io/) go to substantial lengths to continue operating on incomplete code, including type and syntax errors.
+
+None of this invalidates the contribution of this paper - to provide a semantics that supports reasoning about such programs - but it does suggest that there is prior art in the field that might be worth considering.
+
+- It would be interesting to see whether the semantics of stepping past holes and then returning to fill in the computation is understood by developers. Whilst this could be future work, it might be worth starting the investigation shortly in case an alternative scheme needs devising.
+
+- Holes seem like a good tool to start with, but sub-optimal in the long run. For example:
+
+area = PI * (r^2
+
+is incomplete, with a hole. however it there is certainly better than zero information about the left hand side.
+
+This leads to a question that is both theoretical and empirical:
+
+Of a corpus of programs being developed, what is the theoretical perspective that maximises the information gain from the developer at any point in time?
+
+I would encourage the authors to consider whether their theoretical work might have purchase on analysing this problem.
+
+So - I like this work, I think it is important and I suggest - as do the authors - that there is much to be gained from a conversation on equal terms between the formal perspective and the user centred perspective about how to reason about what should happen when a user changes a program and clicks step next. Hopefully LIVE can be a context for that.
+
