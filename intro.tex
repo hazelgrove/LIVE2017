@@ -61,10 +61,10 @@ In view of this general problem, we recently developed a \emph{structure editor 
 %% &\longmapsto& 3 + 6 {\div} \hehole^\metavar_\sigma
 %% &
 %% %% \multicolumn{2}{l}{
-%% %% \colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]~\circ~{\textsf{det}}}$}
+%% %% \colorbox{dVeryFaint}{$\xrightarrow{\llbracket (x+1) / u \rrbracket~\circ~{\textsf{det}}}$}
 %% %% }
 %% \multicolumn{1}{l}{
-%% \colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]}$}
+%% \colorbox{dVeryFaint}{$\xrightarrow{\llbracket (x+1) / u \rrbracket}$}
 %% }
 %% && \longmapsto& 3 + 6 {\div} (2 + 1)
 %% \\
@@ -81,7 +81,7 @@ In view of this general problem, we recently developed a \emph{structure editor 
 %% }
 %% \end{array}
 %% }
-%% \caption{Two testing scenerios, related by the edit~$[\!| (x+1) / u |\!]$ (CMTT hole instantiation).}
+%% \caption{Two testing scenerios, related by the edit~$\llbracket (x+1) / u \rrbracket$ (CMTT hole instantiation).}
 %% \label{fig:dynamics}
 %% \end{figure}
 
@@ -102,7 +102,7 @@ In view of this general problem, we recently developed a \emph{structure editor 
 \multicolumn{3}{l}{\texttt{fun}~f(x,y) = 3 + x * y {\div} \hehole{\metavar}_{[x/x,y/y]} + 2 * x}
 &
 \multicolumn{1}{l}{
-\colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]}$}
+\colorbox{dVeryFaint}{$\xrightarrow{\llbracket (x+1) / u \rrbracket}$}
 }
 &
 \multicolumn{3}{l}{\texttt{fun}~f(x,y) = 3 + x * y {\div} (x+1) + 2 * x}
@@ -124,7 +124,7 @@ In view of this general problem, we recently developed a \emph{structure editor 
 f(2,3) &\longmapsto & 3 + 2 * 3 {\div} \hehole{\metavar}_{[2/x, 3/y]}  + 2 * 2
 &
 \multicolumn{1}{l}{
-\colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]}$}
+\colorbox{dVeryFaint}{$\xrightarrow{\llbracket (x+1) / u \rrbracket}$}
 } 
 &
 f(2,3) &{\longmapsto} & {3 + 2 * 3 {\div} (2+1) + 2 * 2}
@@ -133,7 +133,7 @@ f(2,3) &{\longmapsto} & {3 + 2 * 3 {\div} (2+1) + 2 * 2}
 &\longmapsto& 3 + 6 {\div} \hehole{\metavar}_{[2/x, 3/y]} + 2 * 2
 &
 \multicolumn{1}{l}{
-\colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]}$}
+\colorbox{dVeryFaint}{$\xrightarrow{\llbracket (x+1) / u \rrbracket}$}
 }
 && {\longmapsto} & {3 + 6 {\div} (2 + 1) + 2 * 2}
 \\
@@ -147,7 +147,7 @@ f(2,3) &{\longmapsto} & {3 + 2 * 3 {\div} (2+1) + 2 * 2}
 %&&
 % &\longmapsto& 3 + \indetaction{\lfloor} 6 {\div} \hehole^\metavar_{\sigma} \indetaction{\rfloor}
 &\multicolumn{1}{l}{
-\colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]}$}
+\colorbox{dVeryFaint}{$\xrightarrow{\llbracket (x+1) / u \rrbracket}$}
 }
 && \longmapsto& {3 + 6 {\div} 3 + 2 * 2}
 \\
@@ -164,7 +164,7 @@ f(2,3) &{\longmapsto} & {3 + 2 * 3 {\div} (2+1) + 2 * 2}
 % &\longmapsto& \indetaction{\lfloor} 3 + \lfloor 6 {\div} \hehole^\metavar_\sigma \rfloor \indetaction{\rfloor}
 &
 \multicolumn{1}{l}{
-\colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]}\mapsto^{*}$}
+\colorbox{dVeryFaint}{$\xrightarrow{\llbracket (x+1) / u \rrbracket}\mapsto^{*}$}
 }
 && \longmapsto & 5 + 4
 \\
@@ -172,7 +172,7 @@ f(2,3) &{\longmapsto} & {3 + 2 * 3 {\div} (2+1) + 2 * 2}
 && 
 &&& \longmapsto & 9
 % \multicolumn{1}{l}{
-% \colorbox{dVeryFaint}{$\xrightarrow{[\!| (x+1) / u |\!]}$}
+% \colorbox{dVeryFaint}{$\xrightarrow{\llbracket (x+1) / u \rrbracket}$}
 % }
 \end{array}
 }
@@ -229,14 +229,14 @@ The problem here is that when live programming, it might not be desirable to res
 A better design would be one where if the editor has already computed an evaluation 
 state from the version of $f$ with a hole, and  
 two edit states differ only up to \emph{hole instantiation}, written 
-$[\!| (x+1) / u
-|\!]$, then it can take advantage of an important commutativity property that we aim 
+$\llbracket (x+1) / u
+\rrbracket$, then it can take advantage of an important commutativity property that we aim 
 to prove about our dynamics: that 
 \emph{hole instantiation commutes with evaluation}. 
 
-Hole instantiation, $[\!| e / u |\!]e'$ is similar to substitution, except that it acts on
+Hole instantiation, $\llbracket e / u \rrbracket e'$ is similar to substitution, except that it acts on
  hole(s) named $u$ in $\hexp'$. At each such hole, the corresponding substitution is applied to $\hexp$. For example, on Line 1, we replace the hole $u$ on the left with $[2/x,3/y](x+1) = 2 + 1$ on the right to arrive at the corresponding evaluation state. The same can be done on Line 2, allowing us to skip Line 1 entirely. On Line 3, hole instantiation operates a bit differently because the hole $u$ has been evaluated -- we now instantiate the hole with the evaluated value of $[2/x, 3/y](x + 1)$, which is $3$. 
-% $[\!| x + 1 / u |\!]\hehole^\metavar_{[2/x, 3/y]} = 2 + 1$.
+% $\llbracket x + 1 / u \rrbracket\hehole^\metavar_{[2/x, 3/y]} = 2 + 1$.
 
 More generally, our conjecture is that it suffices to start from any indeterminate evaluation 
 state previously computed and perform hole instantiation on it. After doing so, evaluation can resume. The end result is guaranteed to coincide with that of evaluating the new version of $f$ from scratch. This might require some number of additional steps, as indicated by the $\mapsto^{*}$ connective on Line 6.
