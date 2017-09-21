@@ -9,13 +9,13 @@ In the words of \citet{burckhardt2013s}, live programming environments
 between program development and code execution''. Examples of live programming environments include {lab notebook environments},
 e.g. the popular IPython/Jupyter~\cite{PER-GRA:2007}, which allow the
 programmer to interactively edit and evaluate program fragments organized into a
-sequence of cells (an extension of the read-eval-print loop (REPL)); spreadsheets; {live graphics programming environments} like SuperGlue \cite{McDirmid:2007:LUL:1297027.1297073}, Sketch-n-Sketch \cite{DBLP:conf/pldi/ChughHSA16} and the tools demonstrated by Bret Victor in his lectures \cite{victor2012inventing}; the TouchDevelop live UI framework \cite{Burckhardt:2013:ACF:2491956.2462170}; and live visual and auditory dataflow languages \cite{DBLP:conf/vl/BurnettAW98}, to name just a few prominent examples.
+sequence of cells (an extension of the read-eval-print loop (REPL)); spreadsheets; {live graphics programming environments} like SuperGlue \cite{McDirmid:2007:LUL:1297027.1297073}, Sketch-n-Sketch \cite{DBLP:conf/pldi/ChughHSA16} and the tools demonstrated by Bret Victor in his lectures \cite{victor2012inventing}; the TouchDevelop live UI framework \cite{Burckhardt:2013:ACF:2491956.2462170}; live mobile application development systems like Flutter \cite{flutter}; and live visual and auditory dataflow languages \cite{DBLP:conf/vl/BurnettAW98}, to name a few prominent examples.
 
 
 The problem that has motivated much of our recent work is that many  
 programming environments, live programming environments included,  provide feedback, via various editor services, only once the program being edited is syntactically well-formed and, when relevant, well-typed. This leaves a ``temporal and perceptive gap'', because programmers sometimes leave a program malformed or ill-typed for extended periods of time, e.g. as they think about what to enter at the cursor, or as they work on a different part of the program.
 
-In view of this problem, we recently developed a \emph{structure editor calculus} called Hazelnut where every edit state consists of a well-formed and statically meaningful, i.e. well-typed, expression with holes \cite{popl-paper}. This calculus addressed fundamental questions relevant to editor services that operate statically, but there was no solution in that paper to the problems faced by editor services that also require knowledge of the dynamic meaning of an incomplete program, as would be central to a live programming environment. For example, a \emph{stepper} requires that the expression being stepped be assigned dynamic meaning according to a small-step operational semantics \cite{DBLP:journals/jlp/Plotkin04a,pfpl}, but no such semantics was defined for the incomplete expressions that arise when using Hazelnut. Defining such a semantics was left as future work in that paper, and in a subsequent ``vision paper'' \cite{snapl17-paper}. The purpose of this paper is to sketch out our progress toward a solution.
+In view of this problem, we recently developed a \emph{structure editor calculus} called Hazelnut where every edit state consists of a well-formed and statically meaningful, i.e. well-typed, expression with holes \cite{popl-paper}. This calculus addressed fundamental questions relevant to editor services that operate statically, but there was no solution in that paper to the problems faced by editor services that also require knowledge of the dynamic meaning of an incomplete program, as would be central to a live programming environment. For example, a \emph{stepper}, like that available to Haskell programmers in the GHCi system \cite{GHC-stepper} and to OCaml programmers with recent work on \texttt{ocamli} by \citet{ocaml-stepper}, requires that the expression being stepped be assigned dynamic meaning according to a small-step operational semantics \cite{DBLP:journals/jlp/Plotkin04a,pfpl}, but no such semantics was defined for the incomplete expressions that arise when using Hazelnut. Defining such a semantics was left as future work in that paper, and in a subsequent ``vision paper'' \cite{snapl17-paper}. The purpose of this paper is to sketch out our progress toward a theoretically grounded solution.
 
 % \section{Example}
 
@@ -93,7 +93,7 @@ In view of this problem, we recently developed a \emph{structure editor calculus
 \ensuremath{
 \arraycolsep=3pt
 \begin{array}{rrclcrcl}
-\multicolumn{4}{l}{\textbf{Scenario 1: Stepping}}
+\multicolumn{4}{l}{\textbf{Scenario 1: Initial Stepping}}
 &
 \multicolumn{4}{l}{\textbf{Scenario 2: Edit and Resume}}
 \\
@@ -182,9 +182,9 @@ f(2,3) &{\longmapsto} & {3 + 2 * 3 {\div} (2+1) + 2 * 2}
 \label{fig:dynamics}
 \end{figure}
 
-\noindent\textbf{Scenario 1: Stepping.} Consider the definition of the incomplete function $f$ on the top left of Fig. \ref{fig:dynamics}. 
+\noindent\textbf{Scenario 1: Initial Stepping.} Consider the definition of the incomplete function $f$ on the top left of Fig. \ref{fig:dynamics}. 
 %
-This function is incomplete because a hole, notated $\Circle$, appears in its body. In our previous work, holes were unadorned \cite{popl-paper}.\footnote{In our previous work, we notated holes $\tehole$, but $\Circle$ is simpler for our present purposes.} For the purposes of this paper, however, it is helpful to adorn each hole with a unique name, $u$. In addition, each hole is adorned with an \emph{environment}, indicated by a subscript. We will return to consider environments shortly. Our notation here is for the purposes of exposition. In practice, the hole name might be indicated in some other way, e.g. using different colors for different visible holes, and the environment would be maintained internally, rather than shown explicitly to the programmer as an adornment on the hole itself.
+This function is incomplete because a hole, notated $\Circle$, appears in its body. In our previous work, holes were unadorned \cite{popl-paper}.\footnote{In our previous work, we notated holes $\tehole$, but $\Circle$ is simpler for our present purposes.} For the purposes of this paper, however, it is helpful to adorn each hole with a unique name, $u$. In addition, each hole is adorned with an \emph{environment}, indicated by a subscript. We will return to consider environments shortly. Our notation here is for the purposes of exposition. In practice, the hole name might be indicated in some other way, e.g. using different colors for different visible holes, and the environment would be maintained internally, rather than shown explicitly to the programmer.
 
 The cell below the definition of $f$ applies $f$ to $2$ and $3$ (because the programmer intends to explore the behavior of $f$ for this choice of input.) Normally, the fact that $f$ is incomplete would prevent the programmer from being able to step this function application -- the programmer would first need to fill in the hole in $f$ with a well-typed term before the stepper could consult the language's operational semantics to proceed with stepping. This is despite the fact that according to a static semantics for incomplete expressions following that described in our previous work, $f$ can still be assigned type $\tarr{(\tnum, \tnum)}{\tnum}$ and $f(2, 3)$ can therefore be assigned type $\tnum$ \cite{popl-paper}. Our interest here is in eliminating this restriction, so that we can step the expression $f(2, 3)$ even before completing the definition of $f$. We can do so as shown on Lines 1-6 (left) of Fig. \ref{fig:dynamics}.  Let us consider each step in turn. 
 
@@ -234,7 +234,7 @@ $[\!| (x+1) / u
 to prove about our dynamics: that 
 \emph{hole instantiation commutes with evaluation}. 
 
-Hole instantiation, $[\!| \hexp / u |\!]\hexp'$ is similar to substitution, except that it acts on
+Hole instantiation, $[\!| e / u |\!]e'$ is similar to substitution, except that it acts on
  hole(s) named $u$ in $\hexp'$. At each such hole, the corresponding substitution is applied to $\hexp$. For example, on Line 1, we replace the hole $u$ on the left with $[2/x,3/y](x+1) = 2 + 1$ on the right to arrive at the corresponding evaluation state. The same can be done on Line 2, allowing us to skip Line 1 entirely. On Line 3, hole instantiation operates a bit differently because the hole $u$ has been evaluated -- we now instantiate the hole with the evaluated value of $[2/x, 3/y](x + 1)$, which is $3$. 
 % $[\!| x + 1 / u |\!]\hehole^\metavar_{[2/x, 3/y]} = 2 + 1$.
 
